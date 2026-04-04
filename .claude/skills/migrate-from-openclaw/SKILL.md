@@ -289,19 +289,21 @@ After all skills are copied, a container rebuild is needed — note this for pos
 
 ### Config-registered plugins and skills
 
-If CONFIG_PLUGIN_COUNT > 0 in discovery, OpenClaw had installed plugins/skills with API keys (e.g. `plugins.entries.brave`, `skills.entries.openai-whisper-api`). These are functional tools — not just config, but actual capabilities the agent had.
+If CONFIG_PLUGIN_COUNT > 0 in discovery, OpenClaw had installed plugins/skills with API keys (e.g. `plugins.entries.brave`, `skills.entries.openai-whisper-api`). These are functional tools the agent had access to.
 
-For each detected plugin, present the name to the user and discuss whether to set it up in NanoClaw. Don't just save the API key — actually install the equivalent. Read the config section to get the API key, then:
+For each detected plugin, present the name to the user and discuss whether to set it up in NanoClaw. Read the OpenClaw config section to understand what it is, then:
 
-1. **Check if NanoClaw has a matching skill** — look for an existing NanoClaw skill that provides the same capability (e.g. `/add-voice-transcription` for whisper, `/add-image-vision` for image processing). If found, invoke that skill with the API key pre-configured in `.env`.
+1. **If NanoClaw has a matching skill** — check the available NanoClaw skills list for an equivalent (e.g. `/add-voice-transcription` for whisper). If found, save the API key to `.env` and invoke that skill.
 
-2. **Check if it can be an MCP server** — many OpenClaw plugins are wrappers around CLI tools or APIs. If the tool is available as an MCP server (check npm for `@modelcontextprotocol/*` or similar), add it to the container's MCP config in `container/agent-runner/src/index.ts`.
+2. **If the OpenClaw plugin was an MCP server** — read its config to find the exact package name and command. Install the same MCP server (e.g. `npx -y <exact-package-from-config>`). Don't search for or guess at MCP packages — only install what was explicitly configured.
 
-3. **Check if it's a CLI tool** — if the plugin wraps a CLI binary, it needs to be installed in the container. Add it to the Dockerfile and create a container skill (`container/skills/<name>/SKILL.md`) with usage instructions.
+3. **If the OpenClaw plugin was a CLI tool** — read the config to identify the exact tool. If it's an npm package, add it to the container's Dockerfile. Add a note to the group's CLAUDE.md that the tool is available and how to invoke it.
 
-4. **If no equivalent exists** — note it in the migration state as deferred and tell the user.
+4. **If the plugin wraps an API** — discuss with the user what it did and offer to implement the equivalent: save the API key to `.env`, write a container skill with instructions for using the API, or wire it into the message flow if it's something automatic (e.g. voice transcription).
 
-For API keys, read the config value directly (don't display raw keys) and write to `.env` with the variable name the NanoClaw equivalent expects. The discovery script reports which plugins have keys but never extracts them.
+5. **If unclear** — discuss with the user what the plugin did and decide together. Don't install unknown packages or search for replacements — that's a supply chain risk.
+
+For API keys, read the config value directly (don't display raw keys) and write to `.env`. The discovery script reports which plugins have keys but never extracts them.
 
 ### Other files (TOOLS.md, HEARTBEAT.md, BOOTSTRAP.md, AGENTS.md)
 
