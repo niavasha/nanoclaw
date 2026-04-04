@@ -469,10 +469,14 @@ function detectGroups(
 
       for (const [key, value] of Object.entries(entries)) {
         // Match session keys like "whatsapp:group:120...@g.us"
-        const match = key.match(/^(\w+):group:(.+)$/i);
+        // or prefixed "agent:main:whatsapp:group:120...@g.us"
+        // Also match DM sessions: "whatsapp:dm:number@s.whatsapp.net"
+        const match = key.match(/(\w+):(group|dm|channel):(.+)$/i);
         if (!match) continue;
 
-        const [, channel, id] = match;
+        const [, channel, kind, id] = match;
+        // Skip DM sessions for group detection — they're individual chats
+        if (kind === 'dm') continue;
         const dedupKey = `${channel}:${id}`;
         if (seen.has(dedupKey)) continue;
         seen.add(dedupKey);

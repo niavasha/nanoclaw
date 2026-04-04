@@ -289,11 +289,19 @@ After all skills are copied, a container rebuild is needed — note this for pos
 
 ### Config-registered plugins and skills
 
-If CONFIG_PLUGIN_COUNT > 0 in discovery, OpenClaw had plugins or skills registered in the config with API keys (e.g. `plugins.entries.brave` with a Brave Search API key, or `skills.entries.openai-whisper-api` with an OpenAI key). These are separate from directory-based skills — they're npm-installed packages configured in `openclaw.json`.
+If CONFIG_PLUGIN_COUNT > 0 in discovery, OpenClaw had installed plugins/skills with API keys (e.g. `plugins.entries.brave`, `skills.entries.openai-whisper-api`). These are functional tools — not just config, but actual capabilities the agent had.
 
-For each plugin/skill with an API key, discuss with the user whether to bring the key over. Some have NanoClaw equivalents (e.g. Brave search → container MCP server, Whisper → `/add-voice-transcription`). For those with equivalents, save the API key to `.env` with an appropriate variable name so it's available when the equivalent is installed during `/setup`.
+For each detected plugin, present the name to the user and discuss whether to set it up in NanoClaw. Don't just save the API key — actually install the equivalent. Read the config section to get the API key, then:
 
-Read the relevant config section directly to extract the API key — the discovery script reports which have keys but doesn't extract them (credentials never go to stdout).
+1. **Check if NanoClaw has a matching skill** — look for an existing NanoClaw skill that provides the same capability (e.g. `/add-voice-transcription` for whisper, `/add-image-vision` for image processing). If found, invoke that skill with the API key pre-configured in `.env`.
+
+2. **Check if it can be an MCP server** — many OpenClaw plugins are wrappers around CLI tools or APIs. If the tool is available as an MCP server (check npm for `@modelcontextprotocol/*` or similar), add it to the container's MCP config in `container/agent-runner/src/index.ts`.
+
+3. **Check if it's a CLI tool** — if the plugin wraps a CLI binary, it needs to be installed in the container. Add it to the Dockerfile and create a container skill (`container/skills/<name>/SKILL.md`) with usage instructions.
+
+4. **If no equivalent exists** — note it in the migration state as deferred and tell the user.
+
+For API keys, read the config value directly (don't display raw keys) and write to `.env` with the variable name the NanoClaw equivalent expects. The discovery script reports which plugins have keys but never extracts them.
 
 ### Other files (TOOLS.md, HEARTBEAT.md, BOOTSTRAP.md, AGENTS.md)
 
@@ -338,13 +346,7 @@ The script writes the credential directly to `.env` using the correct NanoClaw v
 
 For Slack: there are two credentials (bot token + app token). The script handles both in one run — check `HAS_CREDENTIAL_2` and `NANOCLAW_ENV_VAR_2` in the status block.
 
-**WhatsApp special case:** WhatsApp uses QR/pairing-code authentication, not a token. Re-authenticating takes about 60 seconds — the user links the device on their phone and enters a pairing code.
-
-**Strongly recommend re-authenticating.** Copying auth state files from OpenClaw is unreliable: even though both use the same Baileys library, the Signal protocol encryption sessions often become stale or incompatible after copying. In testing, copied auth state connected successfully but messages failed to decrypt ("Bad MAC", "No SenderKeyRecord"), requiring re-auth anyway.
-
-If AUTH_STATE_PATH is found, tell the user: "WhatsApp auth state exists from OpenClaw, but copying it is unreliable — encryption sessions break during transfer. Re-authenticating takes about 60 seconds during `/setup` (you'll enter a pairing code on your phone). I recommend starting fresh."
-
-Skip to `/setup` for WhatsApp authentication — the `/add-whatsapp` skill handles pairing.
+**WhatsApp special case:** WhatsApp uses QR/pairing-code authentication, not a token. Do not copy auth state from OpenClaw — encryption sessions become stale after copying and messages fail to decrypt. Authentication will be handled during `/setup` via the `/add-whatsapp` skill (takes about 60 seconds with a pairing code). Just note that WhatsApp was configured and move on.
 
 **Allowlist note:** If the channel had `allowFrom` or group policies, these were already handled in Phase 2 (sender allowlists). Mention that the allowlist file was created earlier.
 
