@@ -287,6 +287,14 @@ cp -r <skill_source_dir> container/skills/<skill_name>
 
 After all skills are copied, a container rebuild is needed — note this for post-migration: `./container/build.sh`.
 
+### Config-registered plugins and skills
+
+If CONFIG_PLUGIN_COUNT > 0 in discovery, OpenClaw had plugins or skills registered in the config with API keys (e.g. `plugins.entries.brave` with a Brave Search API key, or `skills.entries.openai-whisper-api` with an OpenAI key). These are separate from directory-based skills — they're npm-installed packages configured in `openclaw.json`.
+
+For each plugin/skill with an API key, discuss with the user whether to bring the key over. Some have NanoClaw equivalents (e.g. Brave search → container MCP server, Whisper → `/add-voice-transcription`). For those with equivalents, save the API key to `.env` with an appropriate variable name so it's available when the equivalent is installed during `/setup`.
+
+Read the relevant config section directly to extract the API key — the discovery script reports which have keys but doesn't extract them (credentials never go to stdout).
+
 ### Other files (TOOLS.md, HEARTBEAT.md, BOOTSTRAP.md, AGENTS.md)
 
 If these exist, briefly mention them and explain:
@@ -330,20 +338,13 @@ The script writes the credential directly to `.env` using the correct NanoClaw v
 
 For Slack: there are two credentials (bot token + app token). The script handles both in one run — check `HAS_CREDENTIAL_2` and `NANOCLAW_ENV_VAR_2` in the status block.
 
-**WhatsApp special case:** The script reports AUTH_STATE_PATH instead of a token. Both OpenClaw and NanoClaw use the same Baileys library (`@whiskeysockets/baileys` v7) with `useMultiFileAuthState`, so the auth files are directly compatible.
+**WhatsApp special case:** WhatsApp uses QR/pairing-code authentication, not a token. Re-authenticating takes about 60 seconds — the user links the device on their phone and enters a pairing code.
 
-OpenClaw stores WhatsApp auth at `~/.openclaw/credentials/whatsapp/default/` (or a custom account path). NanoClaw stores it at `store/auth/`.
+**Strongly recommend re-authenticating.** Copying auth state files from OpenClaw is unreliable: even though both use the same Baileys library, the Signal protocol encryption sessions often become stale or incompatible after copying. In testing, copied auth state connected successfully but messages failed to decrypt ("Bad MAC", "No SenderKeyRecord"), requiring re-auth anyway.
 
-If AUTH_STATE_PATH is found and is not `not_found`: AskUserQuestion:
-1. **Copy auth state (recommended)** — "Copy your existing WhatsApp session so you don't need to re-scan a QR code."
-2. **Re-authenticate** — "Start fresh with a new QR code during setup."
+If AUTH_STATE_PATH is found, tell the user: "WhatsApp auth state exists from OpenClaw, but copying it is unreliable — encryption sessions break during transfer. Re-authenticating takes about 60 seconds during `/setup` (you'll enter a pairing code on your phone). I recommend starting fresh."
 
-If copying, run:
-```bash
-mkdir -p store/auth && cp -r <AUTH_STATE_PATH>/* store/auth/
-```
-
-Verify: `ls store/auth/creds.json` should exist after copy.
+Skip to `/setup` for WhatsApp authentication — the `/add-whatsapp` skill handles pairing.
 
 **Allowlist note:** If the channel had `allowFrom` or group policies, these were already handled in Phase 2 (sender allowlists). Mention that the allowlist file was created earlier.
 
@@ -416,7 +417,6 @@ Print a comprehensive summary:
 - Memories → `memories.md` + daily memory files (copied to `daily-memories/` or consolidated)
 - OpenClaw skills → copied to `container/skills/`
 - Channel credentials → `.env` (list which channels)
-- WhatsApp auth state → `store/auth/` (if copied)
 - Scheduled tasks → inserted into database or noted for post-setup
 - MCP servers → registered in agent-runner
 

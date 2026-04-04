@@ -575,6 +575,48 @@ function countCronJobs(stateDir: string): {
 }
 
 // ---------------------------------------------------------------------------
+// Config-registered plugins and skills (with API keys)
+// ---------------------------------------------------------------------------
+
+interface ConfigPlugin {
+  name: string;
+  source: 'skills.entries' | 'plugins.entries';
+  hasApiKey: boolean;
+}
+
+function detectConfigPlugins(
+  config: Record<string, unknown>,
+): ConfigPlugin[] {
+  const results: ConfigPlugin[] = [];
+
+  // Check skills.entries (e.g. openai-whisper-api with apiKey)
+  const skills = config.skills as Record<string, unknown> | undefined;
+  const skillEntries = skills?.entries as Record<string, unknown> | undefined;
+  if (skillEntries) {
+    for (const [name, entry] of Object.entries(skillEntries)) {
+      if (!entry || typeof entry !== 'object') continue;
+      const e = entry as Record<string, unknown>;
+      const hasKey = !!(e.apiKey || e.token || e.key);
+      results.push({ name, source: 'skills.entries', hasApiKey: hasKey });
+    }
+  }
+
+  // Check plugins.entries (e.g. brave with config.webSearch.apiKey)
+  const plugins = config.plugins as Record<string, unknown> | undefined;
+  const pluginEntries = plugins?.entries as Record<string, unknown> | undefined;
+  if (pluginEntries) {
+    for (const [name, entry] of Object.entries(pluginEntries)) {
+      if (!entry || typeof entry !== 'object') continue;
+      // Deep-search for apiKey in nested config
+      const hasKey = JSON.stringify(entry).includes('apiKey');
+      results.push({ name, source: 'plugins.entries', hasApiKey: hasKey });
+    }
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
 // MCP server detection
 // ---------------------------------------------------------------------------
 
@@ -613,6 +655,7 @@ function main(): void {
   const mcpServers = config ? detectMcpServers(config) : [];
   const dailyMemoryFiles = countDailyMemoryFiles(workspaceDir);
   const skills = detectSkills(stateDir, workspaceDir);
+  const configPlugins = config ? detectConfigPlugins(config) : [];
 
   // Format channels as "name(has_creds)" or "name(no_creds)"
   const channelList = channels
@@ -676,6 +719,8 @@ function main(): void {
     DAILY_MEMORY_FILES: dailyMemoryFiles,
     SKILL_COUNT: skills.length,
     SKILLS: skillList || 'none',
+    CONFIG_PLUGINS: configPlugins.map((p) => `${p.name}(${p.source}${p.hasApiKey ? ',has_key' : ''})`).join(',') || 'none',
+    CONFIG_PLUGIN_COUNT: configPlugins.length,
     CRON_JOBS: cronCount,
     CRON_SUMMARIES: cronSummaries.join('|') || 'none',
     MCP_SERVERS: mcpServers.join(',') || 'none',
