@@ -16,7 +16,6 @@ import {
 import type {
   GroupMetadata,
   WAMessageKey,
-  WASocket,
   proto as ProtoTypes,
 } from '@whiskeysockets/baileys';
 // proto is not statically analyzable as a named ESM export from this CJS module
@@ -304,7 +303,11 @@ export class WhatsAppChannel implements Channel {
                 const buffer = await downloadMediaMessage(msg, 'buffer', {});
                 const groupDir = path.join(GROUPS_DIR, groups[chatJid].folder);
                 const caption = normalized?.imageMessage?.caption ?? '';
-                const result = await processImage(buffer as Buffer, groupDir, caption);
+                const result = await processImage(
+                  buffer as Buffer,
+                  groupDir,
+                  caption,
+                );
                 if (result) {
                   content = result.content;
                 }

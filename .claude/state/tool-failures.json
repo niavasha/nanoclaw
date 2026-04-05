@@ -1,0 +1,44 @@
+{
+  "failures": [
+    {
+      "tool": "Bash",
+      "timestamp": "2026-04-04T13:27:17.432707",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    },
+    {
+      "tool": "Bash",
+      "timestamp": "2026-04-04T19:46:51.481085",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    },
+    {
+      "tool": "Bash",
+      "timestamp": "2026-04-04T19:49:11.522771",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    },
+    {
+      "tool": "Grep",
+      "timestamp": "2026-04-04T19:49:22.000568",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    },
+    {
+      "tool": "Glob",
+      "timestamp": "2026-04-04T20:00:55.757029",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    },
+    {
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:08:24.026985",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    },
+    {
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:10:33.231552",
+      "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e"
+    }
+  ],
+  "counts": {
+    "Bash": 5,
+    "Grep": 1,
+    "Glob": 1
+  }
+}

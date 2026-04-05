@@ -1,0 +1,47 @@
+[
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-04T13:23:28",
+    "preview": "/setup"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-04T19:38:39",
+    "preview": "sk-ant-oat01-I7ITSucTrfPDAyFFY43BY2SQRegw0jAINQ8pPVnftxFyNZVb6E-C48Rp1Y0G97mH861\nm9WI7vYaWPL9L2SDENg-tn-F7gAA"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-04T19:47:35",
+    "preview": "what env file you didnt say where it is ?"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-04T19:47:40",
+    "preview": "i added it to my ~/.zshrc"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-04T19:49:03",
+    "preview": "done"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-04T19:50:02",
+    "preview": "(base)  \ud83d\udc0d base \ue0b0 harrymanley@MacBook-Pro \ue0b0 ~ \ue0b0   cat /Users/harrymanley/repos/nanoclaw/.env\nexport TZ=America/New_York\nexport ASSISTANT_NAME=\"Hal\"\nexport ONECLI_URL=http://127.0.0.1:10254\nexport CLAUDE_CODE_OAUTH_TOKEN='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'"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-05T07:06:23",
+    "preview": "do i need tokeep this session running for hal?"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-05T07:06:46",
+    "preview": "what sort of things can i do with it?"
+  },
+  {
+    "session_id": "797151d6-07eb-422a-aa01-0494ea459b0e",
+    "timestamp": "2026-04-05T07:07:55",
+    "preview": "sure"
+  }
+]
