@@ -21,9 +21,16 @@ vi.mock('../logger.js', () => ({
   },
 }));
 
+// Mock image
+vi.mock('../image.js', () => ({
+  isImageMessage: vi.fn(() => false),
+  processImage: vi.fn(),
+}));
+
 // Mock db
 vi.mock('../db.js', () => ({
   getLastGroupSync: vi.fn(() => null),
+  getMessageContentById: vi.fn(),
   setLastGroupSync: vi.fn(),
   updateChatName: vi.fn(),
 }));
@@ -77,6 +84,8 @@ let fakeSocket: ReturnType<typeof createFakeSocket>;
 vi.mock('@whiskeysockets/baileys', () => {
   return {
     default: vi.fn(() => fakeSocket),
+    makeWASocket: vi.fn(() => fakeSocket),
+    WASocket: {},
     Browsers: { macOS: vi.fn(() => ['macOS', 'Chrome', '']) },
     DisconnectReason: {
       loggedOut: 401,
@@ -87,9 +96,7 @@ vi.mock('@whiskeysockets/baileys', () => {
       timedOut: 408,
       restartRequired: 515,
     },
-    downloadMediaMessage: vi
-      .fn()
-      .mockResolvedValue(Buffer.from('pdf-data')),
+    downloadMediaMessage: vi.fn().mockResolvedValue(Buffer.from('pdf-data')),
     fetchLatestWaWebVersion: vi
       .fn()
       .mockResolvedValue({ version: [2, 3000, 0] }),

@@ -1,266 +1,6 @@
 {
   "actions": [
     {
-      "normalized": "bash:which",
-      "coarse": "bash:which",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:00.801525",
-      "hash": "86ab157e",
-      "whitelisted": false,
-      "target": "which onecli 2>/dev/null && onecli version 2>/dev/null || echo \"ONECLI_NOT_FOUND\"",
-      "success": true
-    },
-    {
-      "normalized": "bash:curl",
-      "coarse": "bash:curl",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:09.153505",
-      "hash": "2f1c175a",
-      "whitelisted": false,
-      "target": "curl -fsSL onecli.sh/install | sh 2>&1",
-      "success": null
-    },
-    {
-      "normalized": "bash:lsof",
-      "coarse": "bash:lsof",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:22.955073",
-      "hash": "2f881759",
-      "whitelisted": false,
-      "target": "lsof -i :5432 | head -5",
-      "success": true
-    },
-    {
-      "normalized": "bash:ls",
-      "coarse": "bash:ls",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:27.208470",
-      "hash": "57c9ee1b",
-      "whitelisted": false,
-      "target": "ls ~/.onecli/docker-compose.yml 2>/dev/null && echo \"FOUND\" || echo \"NOT_FOUND\"",
-      "success": true
-    },
-    {
-      "normalized": "read:/Users/harrymanley/.onecli/docker-compose.yml",
-      "coarse": "read",
-      "tool": "Read",
-      "timestamp": "2026-04-04T13:27:32.256439",
-      "hash": "89ac1216",
-      "whitelisted": true,
-      "target": "/Users/harrymanley/.onecli/docker-compose.yml",
-      "success": true
-    },
-    {
-      "normalized": "bash:cd",
-      "coarse": "bash:cd",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:37.133504",
-      "hash": "2a9d0475",
-      "whitelisted": false,
-      "target": "cd ~/.onecli && POSTGRES_PORT=5433 docker compose up -d 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "bash:curl",
-      "coarse": "bash:curl",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:47.138162",
-      "hash": "2f1c175a",
-      "whitelisted": false,
-      "target": "curl -fsSL onecli.sh/cli/install | sh 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "bash:export",
-      "coarse": "bash:export",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:52.592552",
-      "hash": "88f8edb5",
-      "whitelisted": false,
-      "target": "export PATH=\"$HOME/.local/bin:$PATH\" && onecli version 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "bash:export",
-      "coarse": "bash:export",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:27:56.823489",
-      "hash": "88f8edb5",
-      "whitelisted": false,
-      "target": "export PATH=\"$HOME/.local/bin:$PATH\" && onecli config set api-host http://127.0.0.1:10254 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "search:grep:-q",
-      "coarse": "search:grep",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:28:01.207564",
-      "hash": "85d37b94",
-      "whitelisted": false,
-      "target": "grep -q 'ONECLI_URL' .env 2>/dev/null || echo 'ONECLI_URL=http://127.0.0.1:10254' >> .env",
-      "success": null
-    },
-    {
-      "normalized": "search:grep:-q",
-      "coarse": "search:grep",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:28:04.248985",
-      "hash": "85d37b94",
-      "whitelisted": false,
-      "target": "grep -q 'ONECLI_URL' .env 2>/dev/null && echo \"ALREADY_SET\" || echo \"NEEDS_ADDING\"",
-      "success": null
-    },
-    {
-      "normalized": "grep:ONECLI_URL:.env",
-      "coarse": "grep",
-      "tool": "Grep",
-      "timestamp": "2026-04-04T13:28:07.811568",
-      "hash": "859bf11b",
-      "whitelisted": true,
-      "target": "ONECLI_URL",
-      "success": null
-    },
-    {
-      "normalized": "bash:test",
-      "coarse": "bash:test",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:28:11.991564",
-      "hash": "7b13107c",
-      "whitelisted": false,
-      "target": "test -f .env && echo \"EXISTS\" || echo \"NO_FILE\"",
-      "success": true
-    },
-    {
-      "normalized": "bash:export",
-      "coarse": "bash:export",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T13:28:20.235734",
-      "hash": "88f8edb5",
-      "whitelisted": false,
-      "target": "export PATH=\"$HOME/.local/bin:$PATH\" && onecli secrets list 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "tool:AskUserQuestion",
-      "coarse": "tool:AskUserQuestion",
-      "tool": "AskUserQuestion",
-      "timestamp": "2026-04-04T13:28:26.620629",
-      "hash": "03a1b352",
-      "whitelisted": false,
-      "target": null,
-      "success": true
-    },
-    {
-      "normalized": "bash:export",
-      "coarse": "bash:export",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:38:50.311202",
-      "hash": "88f8edb5",
-      "whitelisted": false,
-      "target": "export PATH=\"$HOME/.local/bin:$PATH\" && onecli secrets create --name Anthropic --type anthropic --va",
-      "success": true
-    },
-    {
-      "normalized": "bash:export",
-      "coarse": "bash:export",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:38:55.198591",
-      "hash": "88f8edb5",
-      "whitelisted": false,
-      "target": "export PATH=\"$HOME/.local/bin:$PATH\" && onecli secrets list 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "tool:AskUserQuestion",
-      "coarse": "tool:AskUserQuestion",
-      "tool": "AskUserQuestion",
-      "timestamp": "2026-04-04T19:39:03.124676",
-      "hash": "03a1b352",
-      "whitelisted": false,
-      "target": null,
-      "success": true
-    },
-    {
-      "normalized": "tool:Skill",
-      "coarse": "tool:Skill",
-      "tool": "Skill",
-      "timestamp": "2026-04-04T19:41:28.659154",
-      "hash": "0589d22e",
-      "whitelisted": false,
-      "target": null,
-      "success": true
-    },
-    {
-      "normalized": "bash:ls",
-      "coarse": "bash:ls",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:41:32.865950",
-      "hash": "57c9ee1b",
-      "whitelisted": false,
-      "target": "ls store/auth/creds.json 2>/dev/null && echo \"WhatsApp auth exists\" || echo \"No WhatsApp auth\"",
-      "success": true
-    },
-    {
-      "normalized": "bash:ls",
-      "coarse": "bash:ls",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:41:33.402351",
-      "hash": "57c9ee1b",
-      "whitelisted": false,
-      "target": "ls src/channels/whatsapp.ts 2>/dev/null && echo \"WhatsApp code exists\" || echo \"No WhatsApp code\"",
-      "success": true
-    },
-    {
-      "normalized": "tool:AskUserQuestion",
-      "coarse": "tool:AskUserQuestion",
-      "tool": "AskUserQuestion",
-      "timestamp": "2026-04-04T19:41:39.436972",
-      "hash": "03a1b352",
-      "whitelisted": false,
-      "target": null,
-      "success": true
-    },
-    {
-      "normalized": "bash:git:remote",
-      "coarse": "bash:git",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:42:00.688082",
-      "hash": "62fb879f",
-      "whitelisted": false,
-      "target": "git remote -v | grep whatsapp || git remote add whatsapp https://github.com/qwibitai/nanoclaw-whatsa",
-      "success": true
-    },
-    {
-      "normalized": "bash:git:fetch",
-      "coarse": "bash:git",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:42:04.583914",
-      "hash": "d77f9762",
-      "whitelisted": false,
-      "target": "git fetch whatsapp main 2>&1",
-      "success": true
-    },
-    {
-      "normalized": "bash:git:merge",
-      "coarse": "bash:git",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:42:09.041471",
-      "hash": "30191dca",
-      "whitelisted": false,
-      "target": "git merge whatsapp/main --no-edit 2>&1 || { git checkout --theirs package-lock.json 2>/dev/null; git",
-      "success": true
-    },
-    {
-      "normalized": "bash:npm",
-      "coarse": "bash:npm",
-      "tool": "Bash",
-      "timestamp": "2026-04-04T19:42:13.988163",
-      "hash": "18c9ac13",
-      "whitelisted": true,
-      "target": "npm install 2>&1 | tail -5",
-      "success": true
-    },
-    {
       "normalized": "bash:npm",
       "coarse": "bash:npm",
       "tool": "Bash",
@@ -999,6 +739,266 @@
       "whitelisted": false,
       "target": "git add -A && git commit -m \"$(cat <<'EOF'\nfix: resolve image-vision merge conflicts and install sha",
       "success": null
+    },
+    {
+      "normalized": "search:grep:-n",
+      "coarse": "search:grep",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:10:56.176795",
+      "hash": "d449dc7f",
+      "whitelisted": false,
+      "target": "grep -n '<<<<<<<\\|=======\\|>>>>>>>' src/channels/whatsapp.ts",
+      "success": true
+    },
+    {
+      "normalized": "read:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.ts",
+      "coarse": "read",
+      "tool": "Read",
+      "timestamp": "2026-04-05T07:11:00.507878",
+      "hash": "19d7870d",
+      "whitelisted": true,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.ts",
+      "success": true
+    },
+    {
+      "normalized": "edit:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.ts",
+      "coarse": "edit",
+      "tool": "Edit",
+      "timestamp": "2026-04-05T07:11:14.054605",
+      "hash": "d06546f3",
+      "whitelisted": false,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.ts",
+      "success": true
+    },
+    {
+      "normalized": "search:grep:-n",
+      "coarse": "search:grep",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:17.898508",
+      "hash": "d449dc7f",
+      "whitelisted": false,
+      "target": "grep -n '<<<<<<<\\|=======\\|>>>>>>>' src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "bash:git:checkout",
+      "coarse": "bash:git",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:22.608196",
+      "hash": "4ae2d165",
+      "whitelisted": false,
+      "target": "git checkout --theirs src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "search:grep:-c",
+      "coarse": "search:grep",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:26.927548",
+      "hash": "8b3a5bb5",
+      "whitelisted": false,
+      "target": "grep -c 'image\\|Image' src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "search:grep:-c",
+      "coarse": "search:grep",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:30.704684",
+      "hash": "8b3a5bb5",
+      "whitelisted": false,
+      "target": "grep -c 'pdf\\|PDF' src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "bash:git:add",
+      "coarse": "bash:git",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:35.119769",
+      "hash": "f2f863ff",
+      "whitelisted": false,
+      "target": "git add src/channels/whatsapp.ts src/channels/whatsapp.test.ts && git commit --no-edit 2>&1 | tail -",
+      "success": true
+    },
+    {
+      "normalized": "bash:npm",
+      "coarse": "bash:npm",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:40.913714",
+      "hash": "18c9ac13",
+      "whitelisted": true,
+      "target": "npm run build 2>&1 | tail -5",
+      "success": true
+    },
+    {
+      "normalized": "bash:npx",
+      "coarse": "bash:npx",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:11:46.033954",
+      "hash": "4fa14290",
+      "whitelisted": true,
+      "target": "npx vitest run src/channels/whatsapp.test.ts 2>&1 | tail -10",
+      "success": true
+    },
+    {
+      "normalized": "bash:npx",
+      "coarse": "bash:npx",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:12:20.142507",
+      "hash": "4fa14290",
+      "whitelisted": true,
+      "target": "npx vitest run src/channels/whatsapp.test.ts 2>&1 | tail -10",
+      "success": true
+    },
+    {
+      "normalized": "tool:TaskOutput",
+      "coarse": "tool:TaskOutput",
+      "tool": "TaskOutput",
+      "timestamp": "2026-04-05T07:13:24.291808",
+      "hash": "36ee1173",
+      "whitelisted": false,
+      "target": null,
+      "success": true
+    },
+    {
+      "normalized": "tool:TaskOutput",
+      "coarse": "tool:TaskOutput",
+      "tool": "TaskOutput",
+      "timestamp": "2026-04-05T07:14:28.651726",
+      "hash": "36ee1173",
+      "whitelisted": false,
+      "target": null,
+      "success": true
+    },
+    {
+      "normalized": "read:/private/tmp/claude-501/-Users-harrymanley-repos-nanoclaw/797151d6-07eb-422a-aa01-0494ea459b0e/tasks/bpvv5uwvc.output",
+      "coarse": "read",
+      "tool": "Read",
+      "timestamp": "2026-04-05T07:14:55.910310",
+      "hash": "b10a3417",
+      "whitelisted": true,
+      "target": "/private/tmp/claude-501/-Users-harrymanley-repos-nanoclaw/797151d6-07eb-422a-aa01-0494ea459b0e/tasks/bpvv5uwvc.output",
+      "success": true
+    },
+    {
+      "normalized": "bash:npx",
+      "coarse": "bash:npx",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:15:02.430436",
+      "hash": "4fa14290",
+      "whitelisted": true,
+      "target": "npx vitest run src/channels/whatsapp.test.ts 2>&1 | head -50",
+      "success": true
+    },
+    {
+      "normalized": "bash:npx",
+      "coarse": "bash:npx",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:17:39.446477",
+      "hash": "4fa14290",
+      "whitelisted": true,
+      "target": "npx vitest run src/channels/whatsapp.test.ts 2>&1 | grep -A5 'connects with fetched version' | head ",
+      "success": true
+    },
+    {
+      "normalized": "read:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "coarse": "read",
+      "tool": "Read",
+      "timestamp": "2026-04-05T07:20:16.181581",
+      "hash": "957a3967",
+      "whitelisted": true,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "read:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "coarse": "read",
+      "tool": "Read",
+      "timestamp": "2026-04-05T07:20:21.137029",
+      "hash": "957a3967",
+      "whitelisted": true,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "edit:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "coarse": "edit",
+      "tool": "Edit",
+      "timestamp": "2026-04-05T07:20:27.407659",
+      "hash": "5cded4a1",
+      "whitelisted": false,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "edit:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "coarse": "edit",
+      "tool": "Edit",
+      "timestamp": "2026-04-05T07:20:33.579348",
+      "hash": "5cded4a1",
+      "whitelisted": false,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "edit:/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "coarse": "edit",
+      "tool": "Edit",
+      "timestamp": "2026-04-05T07:20:39.618984",
+      "hash": "5cded4a1",
+      "whitelisted": false,
+      "target": "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts",
+      "success": true
+    },
+    {
+      "normalized": "bash:npm",
+      "coarse": "bash:npm",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:20:44.475456",
+      "hash": "18c9ac13",
+      "whitelisted": true,
+      "target": "npm run build 2>&1 | tail -5",
+      "success": true
+    },
+    {
+      "normalized": "bash:npx",
+      "coarse": "bash:npx",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:20:49.592190",
+      "hash": "4fa14290",
+      "whitelisted": true,
+      "target": "npx vitest run src/channels/whatsapp.test.ts 2>&1 | tail -15",
+      "success": true
+    },
+    {
+      "normalized": "tool:Skill",
+      "coarse": "tool:Skill",
+      "tool": "Skill",
+      "timestamp": "2026-04-05T07:20:55.206541",
+      "hash": "0589d22e",
+      "whitelisted": false,
+      "target": null,
+      "success": true
+    },
+    {
+      "normalized": "bash:test",
+      "coarse": "bash:test",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:21:01.171388",
+      "hash": "7b13107c",
+      "whitelisted": false,
+      "target": "test -f src/transcription.ts && echo \"Already exists\" || echo \"Needs install\"",
+      "success": true
+    },
+    {
+      "normalized": "bash:git:add",
+      "coarse": "bash:git",
+      "tool": "Bash",
+      "timestamp": "2026-04-05T07:21:08.956922",
+      "hash": "f2f863ff",
+      "whitelisted": false,
+      "target": "git add -A && git commit -m \"$(cat <<'EOF'\nfix: add missing mocks for image-vision and pdf-reader in",
+      "success": null
     }
   ],
   "warnings_issued": [],
@@ -1014,9 +1014,11 @@
         "git fetch whatsapp skill/image-vision 2>&1",
         "git checkout --theirs package-lock.json && git add package-lock.json",
         "git add src/channels/whatsapp.ts src/container-runner.ts container/agent-runner/src/index.ts && git ",
-        "git fetch whatsapp skill/pdf-reader 2>&1"
+        "git fetch whatsapp skill/pdf-reader 2>&1",
+        "git checkout --theirs src/channels/whatsapp.test.ts",
+        "git add src/channels/whatsapp.ts src/channels/whatsapp.test.ts && git commit --no-edit 2>&1 | tail -"
       ],
-      "last_success": "2026-04-05T07:10:28.808566"
+      "last_success": "2026-04-05T07:11:35.835684"
     },
     "bash:bash": {
       "targets_touched": [
@@ -1033,9 +1035,12 @@
         "npx tsx setup/index.ts --step whatsapp-auth -- --method qr-browser 2>&1",
         "npx tsx setup/index.ts --step register --jid \"14085101919@s.whatsapp.net\" --name \"self-chat\" --trigg",
         "npx tsx setup/index.ts --step mounts -- --empty 2>&1",
-        "npx vitest run src/image.test.ts 2>&1 | tail -10"
+        "npx vitest run src/image.test.ts 2>&1 | tail -10",
+        "npx vitest run src/channels/whatsapp.test.ts 2>&1 | tail -10",
+        "npx vitest run src/channels/whatsapp.test.ts 2>&1 | head -50",
+        "npx vitest run src/channels/whatsapp.test.ts 2>&1 | grep -A5 'connects with fetched version' | head "
       ],
-      "last_success": "2026-04-05T07:10:12.083813"
+      "last_success": "2026-04-05T07:20:50.938392"
     },
     "bash:open": {
       "targets_touched": [
@@ -1106,9 +1111,11 @@
         "/Users/harrymanley/repos/nanoclaw/.claude/skills/update-nanoclaw/SKILL.md",
         "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.ts",
         "/Users/harrymanley/repos/nanoclaw/src/container-runner.ts",
-        "/Users/harrymanley/repos/nanoclaw/container/agent-runner/src/index.ts"
+        "/Users/harrymanley/repos/nanoclaw/container/agent-runner/src/index.ts",
+        "/private/tmp/claude-501/-Users-harrymanley-repos-nanoclaw/797151d6-07eb-422a-aa01-0494ea459b0e/tasks/bpvv5uwvc.output",
+        "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts"
       ],
-      "last_success": "2026-04-05T07:09:38.984568"
+      "last_success": "2026-04-05T07:20:21.187570"
     },
     "bash:cd": {
       "targets_touched": [
@@ -1138,9 +1145,10 @@
         "test -f store/auth/creds.json && echo \"Auth verified\" || echo \"Auth failed\"",
         "test -f .claude/skills/update-nanoclaw/diagnostics.md && echo \"EXISTS\" || echo \"NOT_FOUND\"",
         "test -f src/image.ts && echo \"Already exists\" || echo \"Needs install\"",
-        "test -f container/skills/pdf-reader/pdf-reader && echo \"Already exists\" || echo \"Needs install\""
+        "test -f container/skills/pdf-reader/pdf-reader && echo \"Already exists\" || echo \"Needs install\"",
+        "test -f src/transcription.ts && echo \"Already exists\" || echo \"Needs install\""
       ],
-      "last_success": "2026-04-05T07:10:24.136662"
+      "last_success": "2026-04-05T07:21:01.230913"
     },
     "bash:npm": {
       "targets_touched": [
@@ -1152,7 +1160,7 @@
         "npm ls sharp 2>&1 | head -5",
         "npm install sharp 2>&1 | tail -5"
       ],
-      "last_success": "2026-04-05T07:10:06.853094"
+      "last_success": "2026-04-05T07:20:45.575245"
     },
     "bash:node": {
       "targets_touched": [
@@ -1181,9 +1189,13 @@
         "grep -n 'Diagnostics' .claude/skills/update-nanoclaw/SKILL.md",
         "grep -n '<<<<<<<\\|=======\\|>>>>>>>' src/channels/whatsapp.ts | head -20",
         "grep -n '<<<<<<<\\|=======\\|>>>>>>>' src/container-runner.ts | head -20",
-        "grep -n '<<<<<<<\\|=======\\|>>>>>>>' container/agent-runner/src/index.ts | head -20"
+        "grep -n '<<<<<<<\\|=======\\|>>>>>>>' container/agent-runner/src/index.ts | head -20",
+        "grep -n '<<<<<<<\\|=======\\|>>>>>>>' src/channels/whatsapp.ts",
+        "grep -n '<<<<<<<\\|=======\\|>>>>>>>' src/channels/whatsapp.test.ts",
+        "grep -c 'image\\|Image' src/channels/whatsapp.test.ts",
+        "grep -c 'pdf\\|PDF' src/channels/whatsapp.test.ts"
       ],
-      "last_success": "2026-04-05T07:09:00.694480"
+      "last_success": "2026-04-05T07:11:30.765981"
     },
     "bash:sed": {
       "targets_touched": [
@@ -1210,9 +1222,10 @@
         "/Users/harrymanley/repos/nanoclaw/.claude/skills/update-nanoclaw/SKILL.md",
         "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.ts",
         "/Users/harrymanley/repos/nanoclaw/src/container-runner.ts",
-        "/Users/harrymanley/repos/nanoclaw/container/agent-runner/src/index.ts"
+        "/Users/harrymanley/repos/nanoclaw/container/agent-runner/src/index.ts",
+        "/Users/harrymanley/repos/nanoclaw/src/channels/whatsapp.test.ts"
       ],
-      "last_success": "2026-04-05T07:09:47.376218"
+      "last_success": "2026-04-05T07:20:39.673535"
     }
   },
   "schema_version": 2,
