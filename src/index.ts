@@ -49,6 +49,12 @@ import {
 import { GroupQueue } from './group-queue.js';
 import { resolveGroupFolderPath } from './group-folder.js';
 import { startIpcWatcher } from './ipc.js';
+import {
+  checkMountApproval,
+  executeMountTask,
+  handleMountRequest,
+  restoreMountGrants,
+} from './mount-grants.js';
 import { findChannel, formatMessages, formatOutbound } from './router.js';
 import {
   restoreRemoteControl,
@@ -582,6 +588,7 @@ async function main(): Promise<void> {
   initDatabase();
   logger.info('Database initialized');
   loadState();
+  restoreMountGrants();
 
   // Ensure OneCLI agents exist for all registered groups.
   // Recovers from missed creates (e.g. OneCLI was down at registration time).
@@ -643,6 +650,12 @@ async function main(): Promise<void> {
     }
   }
 
+  // Helper: send message to a JID via the appropriate channel
+  const sendToChannel = async (jid: string, text: string): Promise<void> => {
+    const ch = findChannel(channels, jid);
+    if (ch) await ch.sendMessage(jid, text);
+  };
+
   // Channel callbacks (shared by all channels)
   const channelOpts = {
     onMessage: (chatJid: string, msg: NewMessage) => {
@@ -671,6 +684,15 @@ async function main(): Promise<void> {
           return;
         }
       }
+      // JIT mount approval — intercept yes/no responses to pending mount requests
+      if (
+        !msg.is_from_me &&
+        !msg.is_bot_message &&
+        checkMountApproval(chatJid, msg.content, sendToChannel)
+      ) {
+        return;
+      }
+
       storeMessage(msg);
     },
     onChatMetadata: (
@@ -739,6 +761,9 @@ async function main(): Promise<void> {
     getAvailableGroups,
     writeGroupsSnapshot: (gf, im, ag, rj) =>
       writeGroupsSnapshot(gf, im, ag, rj),
+    onMountRequest: (grant) => handleMountRequest(grant, sendToChannel),
+    onMountTask: (grantId, prompt, sourceGroup, chatJid) =>
+      executeMountTask(grantId, prompt, sourceGroup, chatJid, sendToChannel),
     onTasksChanged: () => {
       const tasks = getAllTasks();
       const taskRows = tasks.map((t) => ({

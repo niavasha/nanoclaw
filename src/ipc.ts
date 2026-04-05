@@ -8,7 +8,7 @@ import { AvailableGroup } from './container-runner.js';
 import { createTask, deleteTask, getTaskById, updateTask } from './db.js';
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
-import { RegisteredGroup } from './types.js';
+import { MountGrant, RegisteredGroup } from './types.js';
 
 export interface IpcDeps {
   sendMessage: (jid: string, text: string) => Promise<void>;
@@ -23,6 +23,13 @@ export interface IpcDeps {
     registeredJids: Set<string>,
   ) => void;
   onTasksChanged: () => void;
+  onMountRequest?: (grant: MountGrant) => void;
+  onMountTask?: (
+    grantId: string,
+    prompt: string,
+    sourceGroup: string,
+    chatJid: string,
+  ) => void;
 }
 
 let ipcWatcherRunning = false;
@@ -166,6 +173,12 @@ export async function processTaskIpc(
     groupFolder?: string;
     chatJid?: string;
     targetJid?: string;
+    // For request_mount
+    path?: string;
+    readonly?: boolean;
+    reason?: string;
+    // For mount_task
+    grantId?: string;
     // For register_group
     jid?: string;
     name?: string;
@@ -459,6 +472,52 @@ export async function processTaskIpc(
           { data },
           'Invalid register_group request - missing required fields',
         );
+      }
+      break;
+
+    case 'request_mount':
+      if (data.path && deps.onMountRequest) {
+        // Find the chatJid for this group
+        let chatJid: string | undefined;
+        for (const [jid, group] of Object.entries(registeredGroups)) {
+          if (group.folder === sourceGroup) {
+            chatJid = jid;
+            break;
+          }
+        }
+        if (!chatJid) {
+          logger.warn({ sourceGroup }, 'Cannot find chatJid for mount request');
+          break;
+        }
+        const containerPath = path.basename(data.path.replace(/^~\//, ''));
+        const grant: MountGrant = {
+          id: `mount-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          groupFolder: sourceGroup,
+          chatJid,
+          hostPath: data.path,
+          containerPath,
+          readonly: data.readonly !== false,
+          durationMinutes: 30,
+          status: 'pending',
+          requestedAt: new Date().toISOString(),
+          reason: data.reason,
+        };
+        deps.onMountRequest(grant);
+      }
+      break;
+
+    case 'mount_task':
+      if (data.grantId && data.prompt && deps.onMountTask) {
+        let chatJid: string | undefined;
+        for (const [jid, group] of Object.entries(registeredGroups)) {
+          if (group.folder === sourceGroup) {
+            chatJid = jid;
+            break;
+          }
+        }
+        if (chatJid) {
+          deps.onMountTask(data.grantId, data.prompt, sourceGroup, chatJid);
+        }
       }
       break;
 

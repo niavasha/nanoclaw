@@ -41,6 +41,15 @@ const DEFAULT_BLOCKED_PATTERNS = [
 ];
 
 /**
+ * Clear the cached allowlist so the next call to loadMountAllowlist()
+ * re-reads from disk. Used by JIT mount grants.
+ */
+export function clearMountAllowlistCache(): void {
+  cachedAllowlist = null;
+  allowlistLoadError = null;
+}
+
+/**
  * Load the mount allowlist from the external config location.
  * Returns null if the file doesn't exist or is invalid.
  * Result is cached in memory for the lifetime of the process.

@@ -26,7 +26,7 @@ import {
 } from './container-runtime.js';
 import { OneCLI } from '@onecli-sh/sdk';
 import { validateAdditionalMounts } from './mount-security.js';
-import { RegisteredGroup } from './types.js';
+import { MountGrant, RegisteredGroup } from './types.js';
 
 const onecli = new OneCLI({ url: ONECLI_URL });
 
@@ -676,6 +676,100 @@ export async function runContainerAgent(
         result: null,
         error: `Container spawn error: ${err.message}`,
       });
+    });
+  });
+}
+
+/**
+ * Run a short-lived subagent container with a specific mount for a file task.
+ * Used by JIT mount permissions — the main agent delegates file operations
+ * to this ephemeral container which has the approved directory mounted.
+ */
+export async function runMountSubagent(
+  grant: MountGrant,
+  prompt: string,
+  groupFolder: string,
+): Promise<string> {
+  const groupDir = resolveGroupFolderPath(groupFolder);
+  fs.mkdirSync(groupDir, { recursive: true });
+
+  const mounts: VolumeMount[] = [
+    { hostPath: groupDir, containerPath: '/workspace/group', readonly: false },
+    {
+      hostPath: grant.hostPath,
+      containerPath: `/workspace/extra/${grant.containerPath}`,
+      readonly: grant.readonly,
+    },
+  ];
+
+  const safeName = `mount-${grant.containerPath}`.replace(/[^a-zA-Z0-9-]/g, '-');
+  const containerName = `nanoclaw-${safeName}-${Date.now()}`;
+  const containerArgs = await buildContainerArgs(mounts, containerName);
+
+  const input: ContainerInput = {
+    prompt: `You have access to /workspace/extra/${grant.containerPath} (${grant.readonly ? 'read-only' : 'read-write'}). ${prompt}`,
+    groupFolder,
+    chatJid: grant.chatJid,
+    isMain: false,
+  };
+
+  logger.info(
+    { containerName, grantId: grant.id, hostPath: grant.hostPath },
+    'Spawning mount subagent',
+  );
+
+  return new Promise((resolve) => {
+    const container = spawn(CONTAINER_RUNTIME_BIN, containerArgs, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    container.stdin.write(JSON.stringify(input));
+    container.stdin.end();
+
+    let stdout = '';
+    container.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    container.stderr.on('data', (data) => {
+      logger.debug({ container: containerName }, data.toString().trim());
+    });
+
+    const timeout = setTimeout(() => {
+      try {
+        stopContainer(containerName);
+      } catch {
+        container.kill('SIGKILL');
+      }
+    }, 120_000); // 2 min hard timeout for subagent
+
+    container.on('close', (code) => {
+      clearTimeout(timeout);
+      if (code !== 0) {
+        logger.error({ containerName, code }, 'Mount subagent failed');
+        resolve(`[Mount subagent error: exited with code ${code}]`);
+        return;
+      }
+
+      // Extract result from output markers
+      const startIdx = stdout.indexOf(OUTPUT_START_MARKER);
+      const endIdx = stdout.indexOf(OUTPUT_END_MARKER);
+      if (startIdx !== -1 && endIdx !== -1) {
+        try {
+          const parsed: ContainerOutput = JSON.parse(
+            stdout.slice(startIdx + OUTPUT_START_MARKER.length, endIdx).trim(),
+          );
+          resolve(parsed.result || '[No output from mount subagent]');
+        } catch {
+          resolve('[Failed to parse mount subagent output]');
+        }
+      } else {
+        resolve('[No structured output from mount subagent]');
+      }
+    });
+
+    container.on('error', (err) => {
+      clearTimeout(timeout);
+      resolve(`[Mount subagent spawn error: ${err.message}]`);
     });
   });
 }

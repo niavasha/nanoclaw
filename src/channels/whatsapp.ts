@@ -100,7 +100,10 @@ export class WhatsAppChannel implements Channel {
     const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
     const { version } = await fetchLatestWaWebVersion({}).catch((err) => {
-      logger.warn({ err }, 'Failed to fetch latest WA Web version, using default');
+      logger.warn(
+        { err },
+        'Failed to fetch latest WA Web version, using default',
+      );
       return { version: undefined };
     });
     this.sock = makeWASocket({
@@ -157,9 +160,18 @@ export class WhatsAppChannel implements Channel {
 
       if (connection === 'close') {
         this.connected = false;
-        const reason = (lastDisconnect?.error as { output?: { statusCode?: number } })?.output?.statusCode;
+        const reason = (
+          lastDisconnect?.error as { output?: { statusCode?: number } }
+        )?.output?.statusCode;
         const shouldReconnect = reason !== DisconnectReason.loggedOut;
-        logger.info({ reason, shouldReconnect, queuedMessages: this.outgoingQueue.length }, 'Connection closed');
+        logger.info(
+          {
+            reason,
+            shouldReconnect,
+            queuedMessages: this.outgoingQueue.length,
+          },
+          'Connection closed',
+        );
 
         if (shouldReconnect) {
           this.scheduleReconnect(1);
@@ -229,23 +241,20 @@ export class WhatsAppChannel implements Channel {
         const rawJid = msg.key.remoteJid;
         if (!rawJid || rawJid === 'status@broadcast') continue;
 
-          // Translate LID JID to phone JID if applicable.
-          // Prefer senderPn from the message key (available in newer WA protocol)
-          // since translateJid may fail to resolve LID→phone via signalRepository.
-          let chatJid = await this.translateJid(rawJid);
-          if (chatJid.endsWith('@lid') && (msg.key as any).senderPn) {
-            const pn = (msg.key as any).senderPn as string;
-            const phoneJid = pn.includes('@') ? pn : `${pn}@s.whatsapp.net`;
-            this.setLidPhoneMapping(
-              rawJid.split('@')[0].split(':')[0],
-              phoneJid,
-            );
-            chatJid = phoneJid;
-            logger.info(
-              { lidJid: rawJid, phoneJid },
-              'Translated LID via senderPn',
-            );
-          }
+        // Translate LID JID to phone JID if applicable.
+        // Prefer senderPn from the message key (available in newer WA protocol)
+        // since translateJid may fail to resolve LID→phone via signalRepository.
+        let chatJid = await this.translateJid(rawJid);
+        if (chatJid.endsWith('@lid') && (msg.key as any).senderPn) {
+          const pn = (msg.key as any).senderPn as string;
+          const phoneJid = pn.includes('@') ? pn : `${pn}@s.whatsapp.net`;
+          this.setLidPhoneMapping(rawJid.split('@')[0].split(':')[0], phoneJid);
+          chatJid = phoneJid;
+          logger.info(
+            { lidJid: rawJid, phoneJid },
+            'Translated LID via senderPn',
+          );
+        }
 
         const normalized = normalizeMessageContent(msg.message);
         const timestamp = new Date(
@@ -254,133 +263,140 @@ export class WhatsAppChannel implements Channel {
 
         // Always notify about chat metadata for group discovery
         const isGroup = chatJid.endsWith('@g.us');
-        this.opts.onChatMetadata(chatJid, timestamp, undefined, 'whatsapp', isGroup);
+        this.opts.onChatMetadata(
+          chatJid,
+          timestamp,
+          undefined,
+          'whatsapp',
+          isGroup,
+        );
 
-          // Only deliver full message for registered groups
-          const groups = this.opts.registeredGroups();
-          if (groups[chatJid]) {
-            let content =
-              normalized?.conversation ||
-              normalized?.extendedTextMessage?.text ||
-              normalized?.imageMessage?.caption ||
-              normalized?.videoMessage?.caption ||
-              '';
+        // Only deliver full message for registered groups
+        const groups = this.opts.registeredGroups();
+        if (groups[chatJid]) {
+          let content =
+            normalized?.conversation ||
+            normalized?.extendedTextMessage?.text ||
+            normalized?.imageMessage?.caption ||
+            normalized?.videoMessage?.caption ||
+            '';
 
-            // WhatsApp group mentions use the LID in raw text (e.g. "@80355281346633")
-            // instead of the display name. Normalize to @AssistantName for trigger matching.
-            if (this.botLidUser && content.includes(`@${this.botLidUser}`)) {
-              content = content.replace(
-                `@${this.botLidUser}`,
-                `@${ASSISTANT_NAME}`,
-              );
-            }
-
-            // Image attachment handling
-            if (isImageMessage(msg)) {
-              try {
-                const buffer = await downloadMediaMessage(msg, 'buffer', {});
-                const groupDir = path.join(GROUPS_DIR, groups[chatJid].folder);
-                const caption = normalized?.imageMessage?.caption ?? '';
-                const result = await processImage(
-                  buffer as Buffer,
-                  groupDir,
-                  caption,
-                );
-                if (result) {
-                  content = result.content;
-                }
-              } catch (err) {
-                logger.warn({ err, jid: chatJid }, 'Image - download failed');
-              }
-            }
-
-            // PDF attachment handling
-            if (normalized?.documentMessage?.mimetype === 'application/pdf') {
-              try {
-                const buffer = await downloadMediaMessage(msg, 'buffer', {});
-                const groupDir = path.join(GROUPS_DIR, groups[chatJid].folder);
-                const attachDir = path.join(groupDir, 'attachments');
-                fs.mkdirSync(attachDir, { recursive: true });
-                const filename = path.basename(
-                  normalized.documentMessage.fileName ||
-                    `doc-${Date.now()}.pdf`,
-                );
-                const filePath = path.join(attachDir, filename);
-                fs.writeFileSync(filePath, buffer as Buffer);
-                const sizeKB = Math.round((buffer as Buffer).length / 1024);
-                const pdfRef = `[PDF: attachments/${filename} (${sizeKB}KB)]\nUse: pdf-reader extract attachments/${filename}`;
-                const caption = normalized.documentMessage.caption || '';
-                content = caption ? `${caption}\n\n${pdfRef}` : pdfRef;
-                logger.info(
-                  { jid: chatJid, filename },
-                  'Downloaded PDF attachment',
-                );
-              } catch (err) {
-                logger.warn(
-                  { err, jid: chatJid },
-                  'Failed to download PDF attachment',
-                );
-              }
-            }
-
-            // Skip protocol messages with no text content (encryption keys, read receipts, etc.)
-            // but allow voice messages through for transcription
-            if (!content && !isVoiceMessage(msg)) continue;
-
-            const sender = msg.key.participant || msg.key.remoteJid || '';
-            const senderName = msg.pushName || sender.split('@')[0];
-
-            const fromMe = msg.key.fromMe || false;
-            // Detect bot messages: with own number, fromMe is reliable
-            // since only the bot sends from that number.
-            // With shared number, bot messages carry the assistant name prefix
-            // (even in DMs/self-chat) so we check for that.
-            const isBotMessage = ASSISTANT_HAS_OWN_NUMBER
-              ? fromMe
-              : content.startsWith(`${ASSISTANT_NAME}:`);
-
-            // Transcribe voice messages before storing
-            let finalContent = content;
-            if (isVoiceMessage(msg)) {
-              try {
-                const transcript = await transcribeAudioMessage(msg, this.sock);
-                if (transcript) {
-                  finalContent = `[Voice: ${transcript}]`;
-                  logger.info({ chatJid, length: transcript.length }, 'Transcribed voice message');
-                } else {
-                  finalContent = '[Voice Message - transcription unavailable]';
-                }
-              } catch (err) {
-                logger.error({ err }, 'Voice transcription error');
-                finalContent = '[Voice Message - transcription failed]';
-              }
-            }
-
-            this.opts.onMessage(chatJid, {
-              id: msg.key.id || '',
-              chat_jid: chatJid,
-              sender,
-              sender_name: senderName,
-              content: finalContent,
-              timestamp,
-              is_from_me: fromMe,
-              is_bot_message: isBotMessage,
-            });
-          } else if (chatJid !== rawJid) {
-            // LID translation produced a JID that doesn't match any registered group
-            logger.warn(
-              {
-                rawJid,
-                translatedJid: chatJid,
-                registeredJids: Object.keys(groups),
-              },
-              'Message JID not found in registered groups after translation',
+          // WhatsApp group mentions use the LID in raw text (e.g. "@80355281346633")
+          // instead of the display name. Normalize to @AssistantName for trigger matching.
+          if (this.botLidUser && content.includes(`@${this.botLidUser}`)) {
+            content = content.replace(
+              `@${this.botLidUser}`,
+              `@${ASSISTANT_NAME}`,
             );
           }
+
+          // Image attachment handling
+          if (isImageMessage(msg)) {
+            try {
+              const buffer = await downloadMediaMessage(msg, 'buffer', {});
+              const groupDir = path.join(GROUPS_DIR, groups[chatJid].folder);
+              const caption = normalized?.imageMessage?.caption ?? '';
+              const result = await processImage(
+                buffer as Buffer,
+                groupDir,
+                caption,
+              );
+              if (result) {
+                content = result.content;
+              }
+            } catch (err) {
+              logger.warn({ err, jid: chatJid }, 'Image - download failed');
+            }
+          }
+
+          // PDF attachment handling
+          if (normalized?.documentMessage?.mimetype === 'application/pdf') {
+            try {
+              const buffer = await downloadMediaMessage(msg, 'buffer', {});
+              const groupDir = path.join(GROUPS_DIR, groups[chatJid].folder);
+              const attachDir = path.join(groupDir, 'attachments');
+              fs.mkdirSync(attachDir, { recursive: true });
+              const filename = path.basename(
+                normalized.documentMessage.fileName || `doc-${Date.now()}.pdf`,
+              );
+              const filePath = path.join(attachDir, filename);
+              fs.writeFileSync(filePath, buffer as Buffer);
+              const sizeKB = Math.round((buffer as Buffer).length / 1024);
+              const pdfRef = `[PDF: attachments/${filename} (${sizeKB}KB)]\nUse: pdf-reader extract attachments/${filename}`;
+              const caption = normalized.documentMessage.caption || '';
+              content = caption ? `${caption}\n\n${pdfRef}` : pdfRef;
+              logger.info(
+                { jid: chatJid, filename },
+                'Downloaded PDF attachment',
+              );
+            } catch (err) {
+              logger.warn(
+                { err, jid: chatJid },
+                'Failed to download PDF attachment',
+              );
+            }
+          }
+
+          // Skip protocol messages with no text content (encryption keys, read receipts, etc.)
+          // but allow voice messages through for transcription
+          if (!content && !isVoiceMessage(msg)) continue;
+
+          const sender = msg.key.participant || msg.key.remoteJid || '';
+          const senderName = msg.pushName || sender.split('@')[0];
+
+          const fromMe = msg.key.fromMe || false;
+          // Detect bot messages: with own number, fromMe is reliable
+          // since only the bot sends from that number.
+          // With shared number, bot messages carry the assistant name prefix
+          // (even in DMs/self-chat) so we check for that.
+          const isBotMessage = ASSISTANT_HAS_OWN_NUMBER
+            ? fromMe
+            : content.startsWith(`${ASSISTANT_NAME}:`);
+
+          // Transcribe voice messages before storing
+          let finalContent = content;
+          if (isVoiceMessage(msg)) {
+            try {
+              const transcript = await transcribeAudioMessage(msg, this.sock);
+              if (transcript) {
+                finalContent = `[Voice: ${transcript}]`;
+                logger.info(
+                  { chatJid, length: transcript.length },
+                  'Transcribed voice message',
+                );
+              } else {
+                finalContent = '[Voice Message - transcription unavailable]';
+              }
+            } catch (err) {
+              logger.error({ err }, 'Voice transcription error');
+              finalContent = '[Voice Message - transcription failed]';
+            }
+          }
+
+          this.opts.onMessage(chatJid, {
+            id: msg.key.id || '',
+            chat_jid: chatJid,
+            sender,
+            sender_name: senderName,
+            content: finalContent,
+            timestamp,
+            is_from_me: fromMe,
+            is_bot_message: isBotMessage,
+          });
+        } else if (chatJid !== rawJid) {
+          // LID translation produced a JID that doesn't match any registered group
+          logger.warn(
+            {
+              rawJid,
+              translatedJid: chatJid,
+              registeredJids: Object.keys(groups),
+            },
+            'Message JID not found in registered groups after translation',
+          );
         }
+      }
     });
   }
-
 
   async sendMessage(jid: string, text: string): Promise<void> {
     // Prefix bot messages with assistant name so users know who's speaking.
@@ -393,7 +409,10 @@ export class WhatsAppChannel implements Channel {
 
     if (!this.connected) {
       this.outgoingQueue.push({ jid, text: prefixed });
-      logger.info({ jid, length: prefixed.length, queueSize: this.outgoingQueue.length }, 'WA disconnected, message queued');
+      logger.info(
+        { jid, length: prefixed.length, queueSize: this.outgoingQueue.length },
+        'WA disconnected, message queued',
+      );
       return;
     }
     try {
@@ -410,7 +429,10 @@ export class WhatsAppChannel implements Channel {
     } catch (err) {
       // If send fails, queue it for retry on reconnect
       this.outgoingQueue.push({ jid, text: prefixed });
-      logger.warn({ jid, err, queueSize: this.outgoingQueue.length }, 'Failed to send, message queued');
+      logger.warn(
+        { jid, err, queueSize: this.outgoingQueue.length },
+        'Failed to send, message queued',
+      );
     }
   }
 
@@ -491,7 +513,10 @@ export class WhatsAppChannel implements Channel {
     // Check local cache first
     const cached = this.lidToPhoneMap[lidUser];
     if (cached) {
-      logger.debug({ lidJid: jid, phoneJid: cached }, 'Translated LID to phone JID (cached)');
+      logger.debug(
+        { lidJid: jid, phoneJid: cached },
+        'Translated LID to phone JID (cached)',
+      );
       return cached;
     }
 
@@ -563,7 +588,10 @@ export class WhatsAppChannel implements Channel {
     if (this.flushing || this.outgoingQueue.length === 0) return;
     this.flushing = true;
     try {
-      logger.info({ count: this.outgoingQueue.length }, 'Flushing outgoing message queue');
+      logger.info(
+        { count: this.outgoingQueue.length },
+        'Flushing outgoing message queue',
+      );
       while (this.outgoingQueue.length > 0) {
         const item = this.outgoingQueue.shift()!;
         // Send directly — queued items are already prefixed by sendMessage
@@ -585,7 +613,9 @@ export class WhatsAppChannel implements Channel {
 registerChannel('whatsapp', (opts: ChannelOpts) => {
   const authDir = path.join(STORE_DIR, 'auth');
   if (!fs.existsSync(path.join(authDir, 'creds.json'))) {
-    logger.warn('WhatsApp: credentials not found. Run /add-whatsapp to authenticate.');
+    logger.warn(
+      'WhatsApp: credentials not found. Run /add-whatsapp to authenticate.',
+    );
     return null;
   }
   return new WhatsAppChannel(opts);

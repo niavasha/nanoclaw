@@ -27,6 +27,21 @@ export interface AllowedRoot {
   description?: string;
 }
 
+export interface MountGrant {
+  id: string;
+  groupFolder: string;
+  chatJid: string;
+  hostPath: string;
+  containerPath: string;
+  readonly: boolean;
+  durationMinutes: number;
+  status: 'pending' | 'active' | 'expired';
+  requestedAt: string;
+  approvedAt?: string;
+  expiresAt?: string;
+  reason?: string;
+}
+
 export interface ContainerConfig {
   additionalMounts?: AdditionalMount[];
   timeout?: number; // Default: 300000 (5 minutes)
