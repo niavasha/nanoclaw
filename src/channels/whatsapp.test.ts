@@ -24,20 +24,8 @@ vi.mock('../logger.js', () => ({
 // Mock db
 vi.mock('../db.js', () => ({
   getLastGroupSync: vi.fn(() => null),
-  getMessageContentById: vi.fn(() => undefined),
   setLastGroupSync: vi.fn(),
   updateChatName: vi.fn(),
-}));
-
-// Mock image module
-vi.mock('../image.js', () => ({
-  isImageMessage: vi.fn().mockReturnValue(false),
-  processImage: vi
-    .fn()
-    .mockResolvedValue({
-      content: '[Image: attachments/test.jpg]',
-      relativePath: 'attachments/test.jpg',
-    }),
 }));
 
 // Mock fs
@@ -49,6 +37,7 @@ vi.mock('fs', async () => {
       ...actual,
       existsSync: vi.fn(() => true),
       mkdirSync: vi.fn(),
+      writeFileSync: vi.fn(),
     },
   };
 });
@@ -74,7 +63,7 @@ function createFakeSocket() {
     sendMessage: vi.fn().mockResolvedValue(undefined),
     sendPresenceUpdate: vi.fn().mockResolvedValue(undefined),
     groupFetchAllParticipating: vi.fn().mockResolvedValue({}),
-    updateMediaMessage: vi.fn().mockResolvedValue(undefined),
+    updateMediaMessage: vi.fn(),
     end: vi.fn(),
     // Expose the event emitter for triggering events in tests
     _ev: ev,
@@ -88,7 +77,6 @@ let fakeSocket: ReturnType<typeof createFakeSocket>;
 vi.mock('@whiskeysockets/baileys', () => {
   return {
     default: vi.fn(() => fakeSocket),
-    makeWASocket: vi.fn(() => fakeSocket),
     Browsers: { macOS: vi.fn(() => ['macOS', 'Chrome', '']) },
     DisconnectReason: {
       loggedOut: 401,
@@ -99,10 +87,12 @@ vi.mock('@whiskeysockets/baileys', () => {
       timedOut: 408,
       restartRequired: 515,
     },
+    downloadMediaMessage: vi
+      .fn()
+      .mockResolvedValue(Buffer.from('pdf-data')),
     fetchLatestWaWebVersion: vi
       .fn()
       .mockResolvedValue({ version: [2, 3000, 0] }),
-    downloadMediaMessage: vi.fn().mockResolvedValue(Buffer.from('image-data')),
     normalizeMessageContent: vi.fn((content: unknown) => content),
     makeCacheableSignalKeyStore: vi.fn((keys: unknown) => keys),
     useMultiFileAuthState: vi.fn().mockResolvedValue({
@@ -116,9 +106,8 @@ vi.mock('@whiskeysockets/baileys', () => {
 });
 
 import { WhatsAppChannel, WhatsAppChannelOpts } from './whatsapp.js';
-import { downloadMediaMessage } from '@whiskeysockets/baileys';
 import { getLastGroupSync, updateChatName, setLastGroupSync } from '../db.js';
-import { isImageMessage, processImage } from '../image.js';
+import { downloadMediaMessage } from '@whiskeysockets/baileys';
 
 // --- Test helpers ---
 
@@ -603,8 +592,7 @@ describe('WhatsAppChannel', () => {
       );
     });
 
-    it('downloads and processes image attachments', async () => {
-      vi.mocked(isImageMessage).mockReturnValue(true);
+    it('downloads and injects PDF attachment path', async () => {
       const opts = createTestOpts();
       const channel = new WhatsAppChannel(opts);
 
@@ -613,15 +601,15 @@ describe('WhatsAppChannel', () => {
       await triggerMessages([
         {
           key: {
-            id: 'msg-img-1',
+            id: 'msg-pdf',
             remoteJid: 'registered@g.us',
             participant: '5551234@s.whatsapp.net',
             fromMe: false,
           },
           message: {
-            imageMessage: {
-              caption: 'Check this',
-              mimetype: 'image/jpeg',
+            documentMessage: {
+              mimetype: 'application/pdf',
+              fileName: 'report.pdf',
             },
           },
           pushName: 'Alice',
@@ -630,19 +618,19 @@ describe('WhatsAppChannel', () => {
       ]);
 
       expect(downloadMediaMessage).toHaveBeenCalled();
-      expect(processImage).toHaveBeenCalled();
+
+      const fs = await import('fs');
+      expect(fs.default.writeFileSync).toHaveBeenCalled();
+
       expect(opts.onMessage).toHaveBeenCalledWith(
         'registered@g.us',
         expect.objectContaining({
-          content: '[Image: attachments/test.jpg]',
+          content: expect.stringContaining('[PDF: attachments/report.pdf'),
         }),
       );
-
-      vi.mocked(isImageMessage).mockReturnValue(false);
     });
 
-    it('handles image without caption', async () => {
-      vi.mocked(isImageMessage).mockReturnValue(true);
+    it('preserves document caption alongside PDF info', async () => {
       const opts = createTestOpts();
       const channel = new WhatsAppChannel(opts);
 
@@ -651,14 +639,60 @@ describe('WhatsAppChannel', () => {
       await triggerMessages([
         {
           key: {
-            id: 'msg-img-2',
+            id: 'msg-pdf-caption',
             remoteJid: 'registered@g.us',
             participant: '5551234@s.whatsapp.net',
             fromMe: false,
           },
           message: {
-            imageMessage: {
-              mimetype: 'image/jpeg',
+            documentMessage: {
+              mimetype: 'application/pdf',
+              fileName: 'report.pdf',
+              caption: 'Here is the monthly report',
+            },
+          },
+          pushName: 'Alice',
+          messageTimestamp: Math.floor(Date.now() / 1000),
+        },
+      ]);
+
+      expect(opts.onMessage).toHaveBeenCalledWith(
+        'registered@g.us',
+        expect.objectContaining({
+          content: expect.stringContaining('Here is the monthly report'),
+        }),
+      );
+
+      expect(opts.onMessage).toHaveBeenCalledWith(
+        'registered@g.us',
+        expect.objectContaining({
+          content: expect.stringContaining('[PDF: attachments/report.pdf'),
+        }),
+      );
+    });
+
+    it('handles PDF download failure gracefully', async () => {
+      vi.mocked(downloadMediaMessage).mockRejectedValueOnce(
+        new Error('Download failed'),
+      );
+
+      const opts = createTestOpts();
+      const channel = new WhatsAppChannel(opts);
+
+      await connectChannel(channel);
+
+      await triggerMessages([
+        {
+          key: {
+            id: 'msg-pdf-fail',
+            remoteJid: 'registered@g.us',
+            participant: '5551234@s.whatsapp.net',
+            fromMe: false,
+          },
+          message: {
+            documentMessage: {
+              mimetype: 'application/pdf',
+              fileName: 'report.pdf',
             },
           },
           pushName: 'Bob',
@@ -666,97 +700,8 @@ describe('WhatsAppChannel', () => {
         },
       ]);
 
-      expect(processImage).toHaveBeenCalledWith(
-        expect.any(Buffer),
-        expect.any(String),
-        '',
-      );
-      expect(opts.onMessage).toHaveBeenCalledWith(
-        'registered@g.us',
-        expect.objectContaining({
-          content: '[Image: attachments/test.jpg]',
-        }),
-      );
-
-      vi.mocked(isImageMessage).mockReturnValue(false);
-    });
-
-    it('handles image download failure gracefully', async () => {
-      vi.mocked(isImageMessage).mockReturnValue(true);
-      vi.mocked(downloadMediaMessage).mockRejectedValueOnce(
-        new Error('Download failed'),
-      );
-      const opts = createTestOpts();
-      const channel = new WhatsAppChannel(opts);
-
-      await connectChannel(channel);
-
-      await triggerMessages([
-        {
-          key: {
-            id: 'msg-img-3',
-            remoteJid: 'registered@g.us',
-            participant: '5551234@s.whatsapp.net',
-            fromMe: false,
-          },
-          message: {
-            imageMessage: {
-              caption: 'Will fail',
-              mimetype: 'image/jpeg',
-            },
-          },
-          pushName: 'Charlie',
-          messageTimestamp: Math.floor(Date.now() / 1000),
-        },
-      ]);
-
-      // Image download failed but caption is still there as content
-      expect(opts.onMessage).toHaveBeenCalledWith(
-        'registered@g.us',
-        expect.objectContaining({
-          content: 'Will fail',
-        }),
-      );
-
-      vi.mocked(isImageMessage).mockReturnValue(false);
-    });
-
-    it('falls back to caption when processImage returns null', async () => {
-      vi.mocked(isImageMessage).mockReturnValue(true);
-      vi.mocked(processImage).mockResolvedValueOnce(null);
-      const opts = createTestOpts();
-      const channel = new WhatsAppChannel(opts);
-
-      await connectChannel(channel);
-
-      await triggerMessages([
-        {
-          key: {
-            id: 'msg-img-4',
-            remoteJid: 'registered@g.us',
-            participant: '5551234@s.whatsapp.net',
-            fromMe: false,
-          },
-          message: {
-            imageMessage: {
-              caption: 'Fallback caption',
-              mimetype: 'image/jpeg',
-            },
-          },
-          pushName: 'Diana',
-          messageTimestamp: Math.floor(Date.now() / 1000),
-        },
-      ]);
-
-      // processImage returned null, so original caption content is used
-      expect(opts.onMessage).toHaveBeenCalledWith(
-        'registered@g.us',
-        expect.objectContaining({
-          content: 'Fallback caption',
-        }),
-      );
-
-      vi.mocked(isImageMessage).mockReturnValue(false);
+      // Message skipped since content remains empty after failed download
+      expect(opts.onMessage).not.toHaveBeenCalled();
     });
   });
 
